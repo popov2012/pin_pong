@@ -75,3 +75,4 @@ while run:
        ship.update()
 
     time.delay(50)
+#w
