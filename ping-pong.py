@@ -1,78 +1,87 @@
 from pygame import *
-from random import randint
-
-font.init()
-font1 = font.SysFont('Arial', 80)
-win = font1.render('YOU WIN!', True, (0, 255, 0))
-lose = font1.render('YOU LOSE!', True, (180, 0, 0))
-
-font2 = font.SysFont('Arial', 36)
-
-mixer.init()
-mixer.music.load('space.ogg')
-mixer.music.play(-1)
-fire_sound = mixer.Sound('fire.ogg')
-
-img_back = "galaxy.jpg"
-img_bullet = "bullet.png"
-img_hero = "rocket.png"
-img_enemy = "ufo.png"
-img_asteroid = "asteroid.png"
-
-score = 0
-goal = 20
-lost = 0
-max_lost = 10
-cbullets = 5
-reload_timer = 0
-reloading = False
-lives = 3
-super_bullet_active = False
-super_bullet_rect = None
-super_bullet_cooldown = False
-super_bullet_cooldown_timer = 0
 
 class GameSprite(sprite.Sprite):
-   def __init__(self, player_image, player_x, player_y, size_x, size_y, player_speed):
-       sprite.Sprite.__init__(self)
-       self.image = transform.scale(image.load(player_image), (size_x, size_y))
-       self.speed = player_speed
+    def __init__(self, player_image, player_x, player_y, player_speed, width, height):
+        super().__init__()
+        self.image = transform.scale(image.load(player_image), (width, height))
+        self.speed = player_speed
+        self.rect = self.image.get_rect()
+        self.rect.x = player_x
+        self.rect.y = player_y
 
-       self.rect = self.image.get_rect()
-       self.rect.x = player_x
-       self.rect.y = player_y
-
-   def reset(self):
-       window.blit(self.image, (self.rect.x, self.rect.y))
+    def reset(self):
+        window.blit(self.image, (self.rect.x, self.rect.y))
 
 class Player(GameSprite):
-   def update(self):
-       keys = key.get_pressed()
-       if keys[K_s] and self.rect.x > 5:
-           self.rect.y -= self.speed
-       if keys[K_w] and self.rect.x < win_width - 80:
-           self.rect.y += self.speed
-
-win_width = 700
-win_height = 500
-display.set_caption("Shooter")
-window = display.set_mode((win_width, win_height))
-background = transform.scale(image.load(img_back), (win_width, win_height))
-
-ship = Player(img_hero, 5, win_height - 100, 80, 100, 10)
-
-finish = False
-run = True
-
-while run:
-    for e in event.get():
+    def update_r(self):
         keys = key.get_pressed()
+        if keys[K_UP] and self.rect.y > 5:
+            self.rect.y -= self.speed
+        if keys[K_DOWN] and self.rect.y < win_height - 150: 
+            self.rect.y += self.speed
+            
+    def update_l(self):
+        keys = key.get_pressed()
+        if keys[K_w] and self.rect.y > 5:
+            self.rect.y -= self.speed
+        if keys[K_s] and self.rect.y < win_height - 150:
+            self.rect.y += self.speed
+
+init()
+back = (200, 255, 255)
+win_width = 600
+win_height = 500
+window = display.set_mode((win_width, win_height))
+window.fill(back)
+
+game = True
+finish = False
+clock = time.Clock()
+FPS = 60
+
+racket1 = Player('racket.png', 30, 200, 4, 50, 150)
+racket2 = Player('racket.png', 520, 200, 4, 50, 150)
+ball = GameSprite('tenis_ball.png', 200, 200, 4, 50, 50)
+
+font.init()
+font = font.Font(None, 35)
+lose1 = font.render('PLAYER 1 LOSE!', True, (180, 0, 0))
+lose2 = font.render('PLAYER 2 LOSE!', True, (180, 0, 0))
+
+speed_x = 3
+speed_y = 3
+
+while game:
+    for e in event.get():
         if e.type == QUIT:
-            run = False
+            game = False
+
     if not finish:
-       window.blit(background,(0,0))
+        window.fill(back)
+        racket1.update_l()
+        racket2.update_r()
+        ball.rect.x += speed_x
+        ball.rect.y += speed_y 
 
-       ship.update()
+        if sprite.collide_rect(racket1, ball) or sprite.collide_rect(racket2, ball):
+            speed_x *= -1
 
-    time.delay(50)
-#w
+        if ball.rect.y > win_height - 50 or ball.rect.y < 0:
+            speed_y *= -1
+
+        if ball.rect.x < 0:
+            finish = True
+            window.blit(lose1, (200, 200))
+
+        if ball.rect.x > win_width:
+            finish = True
+            window.blit(lose2, (200, 200))
+
+        racket1.reset()
+        racket2.reset()
+        ball.reset()
+
+    display.update()
+    clock.tick(FPS)
+
+quit()
